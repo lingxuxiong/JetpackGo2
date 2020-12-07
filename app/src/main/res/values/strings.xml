@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">JetpackGo</string>
+    <string name="hello_Jetpack_go">Hello JetpackGo</string>
+    <string name="hello_view_binding">Hello View Binding</string>
 </resources>
