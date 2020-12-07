@@ -9,7 +9,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val binding = ActivityMainBinding.inflate(layoutInflater)
-        binding.welcome.text = "Hello View Binding"
+        binding.greeting.text = "Hello View Binding"
 
         setContentView(binding.root)
     }
