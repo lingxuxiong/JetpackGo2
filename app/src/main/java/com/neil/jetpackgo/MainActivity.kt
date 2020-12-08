@@ -18,6 +18,10 @@ class MainActivity : AppCompatActivity() {
         val binding: ActivityMainBinding = DataBindingUtil.setContentView(
             this, R.layout.activity_main)
         binding.vm = viewModel
+
+        // Set up life cycle owner of the binding, otherwise, the UI
+        // won't get refreshed as a response to user click event
+        binding.lifecycleOwner = this
     }
 
     override fun onResume() {
