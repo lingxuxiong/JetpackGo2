@@ -16,10 +16,18 @@
 - Data Binding (DB)
 > Binding layout views to model objects so that the bound objects can be
 > changed directly from the layout, and vice versus, changes on the objects
-> can be applied to the layout views automatically. Data Binding be one-way  
-> (V -> M) or Two-way (V <-> M), depending on the implementation though
-> Two-way binding is expected most of the time and it requires the model data
-> observable and wrapped with `LiveData`.
+> can be applied to the layout views automatically. Data Binding can be  
+> one-way (V -> M) or Two-way (V <-> M), depending on the binding expression
+> used. `@{}` for one-way binding and `@={}` for two-way binding, respectively.
+>
+> While two-way binding is expected most of the time and it requires the  
+> model data *observable* and wrapped with `LiveData`. As we can see,  
+> one-way binding is kind of *static binding*, whereas two-way binding  
+> is *dynamic binding*.
+
+- Observability
+> Objects that are observable and is capable of notifying UI updates. It
+> can be implemented as observable fields, Live Data, or observable classes.
 
 # How to use
 1. Enable dataBinding from the app gradle file
@@ -153,8 +161,10 @@ class GreetingViewModel: ViewModel() {
 
         binding.vm = viewModel
 
-        // Set up life cycle owner of the binding, otherwise, the UI
-        // won't get refreshed as a response to user click event
+        // Sets the {@link LifecycleOwner} that should be used for observing changes of
+        // LiveData in this binding. If a {@link LiveData} is in one of the binding expressions
+        // and no LifecycleOwner is set, the LiveData will not be observed and updates to it
+        // will not be propagated to the UI. check ViewDataBinding.setLifecycleOwner() for more details
         binding.lifecycleOwner = this
     }
     ```
@@ -163,7 +173,10 @@ class GreetingViewModel: ViewModel() {
 # References
 1. Android Doc. [Data Binding Libraray Overview](https://developer.android.com/topic/libraries/data-binding). 12/08/2020
 2. Jose Alcérreca(Jalc). [Codelabs - Data Binding in Android](https://codelabs.developers.google.com/codelabs/android-databinding). 12/08/2020
-3. Jose Alcérreca(Jalc). [Android Data Binding Library — from Observable Fields to LiveData in two steps](https://medium.com/androiddevelopers/android-data-binding-library-from-observable-fields-to-livedata-in-two-steps-690a384218f2). 12/08/2020
+3. Jose Alcérreca(Jalc), Jeremy Walker. [Android Data Binding Library samples](https://github.com/android/databinding-samples). 12/09/2020
+4. Jose Alcérreca(Jalc). [Android Data Binding Library — from Observable Fields to LiveData in two steps](https://medium.com/androiddevelopers/android-data-binding-library-from-observable-fields-to-livedata-in-two-steps-690a384218f2). 12/08/2020
+5. Google Git. [Databinding Adapters Classes List](https://android.googlesource.com/platform/frameworks/data-binding/+/master/extensions/baseAdapters/src/main/java/android/databinding/adapters). 12/09/2020
+6. Chris Banes. [Data Binding — lessons learnt](https://medium.com/androiddevelopers/data-binding-lessons-learnt-4fd16576b719). 12/09/2020
 
 # Q & A
 1. What's Data Binding Layout
@@ -213,6 +226,59 @@ class GreetingViewModel: ViewModel() {
     ```
 
 4. What's Binding Adapter
+    > Binding Adapter is a `@BindingAdapter` annotated *static* method which  
+    > gets called WHEN the binding variable get changed to update the target  
+    > view defined by this adapter. For example:
+
+    Definitions of binding adapter
+    ```KOTLIN
+        // This is a built-in binding adapter
+        @BindingAdapter("android:text")  // 1
+        @JvmStatic fun setText(view: TextView, text: CharSequence) { // 2
+            view.setText(text); // 3
+        }
+
+        // This is a custom binding adapter
+        @BindingAdapter("app:hideIfZero")
+        @JvmStatic fun hideIfZero(view: View, number: Int) {
+            view.visibility = if (number == 0) View.GONE else View.Visible
+        }
+        
+        // This is a multi-attributes binding adapter, which is called
+        // whenever any of the bound variables of the attributes gets changed.
+        // It won't be used if any of the attributes are missing, which is 
+        // determined at compile time. Refer BindingAdapter#requireAll for
+        // more details about the default attributes values.
+        // Generally, the requireAll parameter defines when the binding adapter is used:
+        // When true, all elements must be present in the XML definition.
+        // When false, the missing attributes will be null, false if booleans, or 0 if primitives.
+        @BindingAdapter(value = ["app:progressScaled", "android:max"], requireAll = true)
+        @JvmStatic fun setProgress(progressBar: ProgressBar, likes: Int, max: Int) {
+            progressBar.progress = (likes * max / 5).coerceAtMost(max)
+        }
+    ```
+    Triggers of the binding adapter
+    ```xml
+    <ViewGroup>
+        <TextView>
+            android:text="@{vm.name}"
+        </TextView>
+        
+        <ProgressBar>
+            app:hideIfZero="@{vm.likes}"
+            app:progressScaled="@{vm.likes}"
+            android:max="@{100}"  // 5
+        </ProgressBar>
+    </ViewGroup>
+    ```
+
+   - 1: Annotates a Binding Adapter and the view attribute it applies to.
+   - 2: Specifies the binding view and applicable type of value to the attribute.
+   - 3: Implements how the value is applied to change the view attribute.
+   - 4: In Kotlin, static methods can be created by adding functions to the top
+        level of a Kotlin file or as extension functions on the class.
+   - 5: Use a literal integer as for a binding expression, otherwise, the DB won't find the defined adapter
+
 5. What's Binding Class
 
 
